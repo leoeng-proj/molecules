@@ -6,7 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
+#include "Shader.h";
 const char* circleVertex = "#version 330 core\n"
 "layout(location = 0) in vec2 aPos;\n"
 "uniform vec4 color;\n"
@@ -37,11 +37,12 @@ const char* circleFrag = "#version 330 core\n"
 
 using namespace std;
 using namespace glm;
+
 double displayRefreshRate(double& prev, GLFWwindow* window);
 GLFWwindow* startGLFW();
-void startShader(GLuint* shader, const char* shaderCode);
 float screenX = 1000.0f;
 float screenY = 800.0f;
+
 int main(void)
 {
     //initialization
@@ -49,20 +50,7 @@ int main(void)
     if (window == NULL) {
         return -1;
     }
-
-    //shader work
-    GLuint vShader = glCreateShader(GL_VERTEX_SHADER);
-    startShader(&vShader, circleVertex);
-    GLuint fShader = glCreateShader(GL_FRAGMENT_SHADER);
-    startShader(&fShader, circleFrag);
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vShader);
-    glAttachShader(program, fShader);
-    glLinkProgram(program);
-    glDeleteShader(vShader);
-    glDeleteShader(fShader);
-
-
+   
     GLfloat vertices[] =
     {
        /*1.0f, 1.0f, 
@@ -114,6 +102,7 @@ int main(void)
             translations[index++] = translation;
         }
     }
+    Shader shader("src/circleVertex.txt", "src/circleFrag.txt");
 
     double prev = glfwGetTime();  // Set the initial 'previous time'.
     while (!glfwWindowShouldClose(window))
@@ -121,15 +110,11 @@ int main(void)
         double dt = displayRefreshRate(prev, window);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(program);
-        int color = glGetUniformLocation(program, "color");
-        glUniform4f(color, 0.3, 0.5, 1.0, 1.0);
-        int scale = glGetUniformLocation(program, "scale");
-        glUniform1f(scale, 0.5);
-        int res = glGetUniformLocation(program, "resolution");
-        glUniform2f(res, screenX, screenY);
-        int offsets = glGetUniformLocation(program, "offsets");
-        glUniform2fv(offsets, 100, value_ptr(translations[0]));
+        shader.use();
+        shader.setFloat("scale", 0.5);
+        shader.setVec2f("resolution", screenX, screenY);
+        shader.setVec4f("color", 0.3, 0.5, 1.0, 1.0);
+        shader.setVec2fv("offsets", 100, &translations[0]);
         // Bind the VAO so OpenGL knows to use it
         glBindVertexArray(VAO);
         // Draw the triangle using the GL_TRIANGLES primitive
@@ -139,7 +124,7 @@ int main(void)
     }
 
     //Close things up
-    glDeleteProgram(program);
+    shader.destroy();
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
@@ -166,18 +151,6 @@ GLFWwindow* startGLFW() {
     gladLoadGL();
     glViewport(0, 0, screenX, screenY);
     return window;
-}
-void startShader(GLuint* shader, const char* shaderCode) {
-    glShaderSource(*shader, 1, &shaderCode, NULL);
-    glCompileShader(*shader);
-    int  vsuccess;
-    char vinfoLog[512];
-    glGetShaderiv(*shader, GL_COMPILE_STATUS, &vsuccess);
-    if (!vsuccess)
-    {
-        glGetShaderInfoLog(*shader, 512, NULL, vinfoLog);
-        std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << vinfoLog << std::endl;
-    }
 }
 double displayRefreshRate(double& prev, GLFWwindow* window) {
     double curr = glfwGetTime();   // Get the current time.
