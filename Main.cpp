@@ -102,7 +102,7 @@ int main(void)
             translations[index++] = translation;
         }
     }
-    Shader shader("src/circleVertex.txt", "src/circleFrag.txt");
+    Shader shader("src/circleVertex.glsl", "src/circleFrag.glsl");
 
     double prev = glfwGetTime();  // Set the initial 'previous time'.
     while (!glfwWindowShouldClose(window))
