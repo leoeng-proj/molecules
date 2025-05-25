@@ -4,52 +4,44 @@
 #include<cerrno>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 const char* circleVertex = "#version 330 core\n"
-"layout(location = 0) in vec3 aPos;\n"
+"layout(location = 0) in vec2 aPos;\n"
 "uniform vec4 color;\n"
 "uniform float scale;\n"
+"uniform vec2 offsets[100];"
 "out vec4 circleColor;\n"
-"out vec3 pos;"
+"out vec2 pos;"
 "void main() {\n"
-"   gl_Position = vec4(aPos * scale, 1.0);\n"
+"   vec2 offset = offsets[gl_InstanceID];"
+"   gl_Position = vec4(aPos * scale + offset, 0.0, 1.0);"
 "   circleColor = color;\n"
-"   pos = aPos;\n"
+"   pos = aPos * scale + offset;\n"
 "}\n\0";
 const char* circleFrag = "#version 330 core\n"
-"in vec3 pos;\n"
+"in vec2 pos;\n"
 "in vec4 circleColor;\n"
 "out vec4 FragColor;\n"
 "uniform vec2 resolution;\n"
 "void main() {\n"
 "   float aspect = resolution.x / resolution.y;\n" 
-"   float len = length(pos);\n"
+"   vec2 coord = pos;\n"
+"   coord.x *= aspect;\n"
+"   float len = length(coord);\n"
 "   if (len > 1.0)\n"
 "       discard;\n"
 "   FragColor = circleColor;\n"
 "}\n\0";
-const char* circleShaderSource = "#version 330 core\n"
-"uniform vec2 resolution;\n"
-"in vec2 FragCoord;"
-"out vec4 FragColor;\n"
-"void main()\n"
-"{\n"
-"   vec2 fragCoord = gl_FragCoord.xy;\n"
-"   vec2 uv = fragCoord / iResolution.xy * 2.0 - 1.0;\n"
-"   float aspect = resolution.x / resolution.y;\n"
-"   uv.x *= aspect;\n"
-"   float distance = 1 - length(uv);\n"
-"   distance = ceil(distance);\n"
-"   FragColor.rgb = vec3(distance);\n"
-"   FragColor.rgb *= vec3(0.3, 0.5, 1);\n"
-"}\n\0";
-using namespace std;
 
+using namespace std;
+using namespace glm;
 double displayRefreshRate(double& prev, GLFWwindow* window);
 GLFWwindow* startGLFW();
 void startShader(GLuint* shader, const char* shaderCode);
-int screenX = 1000;
-int screenY = 800;
+float screenX = 1000.0f;
+float screenY = 800.0f;
 int main(void)
 {
     //initialization
@@ -73,14 +65,20 @@ int main(void)
 
     GLfloat vertices[] =
     {
-       1.0f, 1.0f, 0.0f,
-       1.0f, -1.0f, 0.0f,
-       -1.0f, -1.0f, 0.0f,
-       -1.0f, 1.0f, 0.0f,
+       /*1.0f, 1.0f, 
+       1.0f, -1.0f, 
+       -1.0f, -1.0f, 
+       -1.0f, 1.0f*/
+        -0.05f, -0.05f,
+         0.05f, -0.05f,
+         0.05f,  0.05f,
+        -0.05f,  0.05f
     };
     unsigned int indices[] = {
-    0, 1, 3,
-    1, 2, 3
+    /*    0, 1, 3,
+        1, 2, 3*/
+        0, 1, 2,
+         2, 3, 0
     };
     GLuint VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);
@@ -96,12 +94,26 @@ int main(void)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     // Configure the Vertex Attribute so that OpenGL knows how to read the VBO
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
     // Enable the Vertex Attribute so that OpenGL knows to use it
     glEnableVertexAttribArray(0);
     //bind everything to 0 so changes are done
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    vec2 translations[100];
+    int index = 0;
+    float offset = 0.1f;
+    for (int y = -10; y < 10; y += 2)
+    {
+        for (int x = -10; x < 10; x += 2)
+        {
+            vec2 translation;
+            translation.x = (float)x / 20.0f + offset;
+            translation.y = (float)y / 20.0f + offset;
+            translations[index++] = translation;
+        }
+    }
 
     double prev = glfwGetTime();  // Set the initial 'previous time'.
     while (!glfwWindowShouldClose(window))
@@ -112,15 +124,16 @@ int main(void)
         int color = glGetUniformLocation(program, "color");
         glUniform4f(color, 0.3, 0.5, 1.0, 1.0);
         int scale = glGetUniformLocation(program, "scale");
-        glUniform1f(scale, 0.05);
-        int iRes = glGetUniformLocation(program, "iResolution");
-        glUniform2f(iRes, screenX, screenY);
+        glUniform1f(scale, 0.5);
+        int res = glGetUniformLocation(program, "resolution");
+        glUniform2f(res, screenX, screenY);
+        int offsets = glGetUniformLocation(program, "offsets");
+        glUniform2fv(offsets, 100, value_ptr(translations[0]));
         glUseProgram(program);
         // Bind the VAO so OpenGL knows to use it
         glBindVertexArray(VAO);
         // Draw the triangle using the GL_TRIANGLES primitive
-        //glDrawArrays(GL_TRIANGLES, 0, 3);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 100);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
