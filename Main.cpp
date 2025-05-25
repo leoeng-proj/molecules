@@ -18,19 +18,19 @@ const char* circleVertex = "#version 330 core\n"
 "   vec2 offset = offsets[gl_InstanceID];"
 "   gl_Position = vec4(aPos * scale + offset, 0.0, 1.0);"
 "   circleColor = color;\n"
-"   pos = aPos * scale + offset;\n"
+"   pos = aPos;\n"
 "}\n\0";
 const char* circleFrag = "#version 330 core\n"
+"uniform vec2 resolution;\n"
 "in vec2 pos;\n"
 "in vec4 circleColor;\n"
 "out vec4 FragColor;\n"
-"uniform vec2 resolution;\n"
 "void main() {\n"
 "   float aspect = resolution.x / resolution.y;\n" 
 "   vec2 coord = pos;\n"
 "   coord.x *= aspect;\n"
 "   float len = length(coord);\n"
-"   if (len > 1.0)\n"
+"   if (len > 0.05)\n"
 "       discard;\n"
 "   FragColor = circleColor;\n"
 "}\n\0";
@@ -121,6 +121,7 @@ int main(void)
         double dt = displayRefreshRate(prev, window);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glUseProgram(program);
         int color = glGetUniformLocation(program, "color");
         glUniform4f(color, 0.3, 0.5, 1.0, 1.0);
         int scale = glGetUniformLocation(program, "scale");
@@ -129,7 +130,6 @@ int main(void)
         glUniform2f(res, screenX, screenY);
         int offsets = glGetUniformLocation(program, "offsets");
         glUniform2fv(offsets, 100, value_ptr(translations[0]));
-        glUseProgram(program);
         // Bind the VAO so OpenGL knows to use it
         glBindVertexArray(VAO);
         // Draw the triangle using the GL_TRIANGLES primitive
