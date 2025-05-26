@@ -9,7 +9,9 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
+/*
+* make sure VAO is enabled BEFORE calling either bind function
+*/
 class VAO {
 private:
 	GLuint vao, vbo, ebo;

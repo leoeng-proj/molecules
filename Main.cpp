@@ -6,8 +6,8 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "Shader.h"
-#include "VAO.h"
+#include "Classes/Shader.h"
+#include "Classes/VAO.h"
 
 using namespace std;
 using namespace glm;
@@ -46,7 +46,7 @@ int main(void)
     vao.disableVAO();
 
     
-    Shader shader("src/circleVertex.glsl", "src/circleFrag.glsl");
+    Shader shader("src/Shaders/circleVertex.glsl", "src/Shaders/circleFrag.glsl");
 
     const unsigned int n = 1;
     vec2 translations[n];
