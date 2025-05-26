@@ -6,40 +6,15 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "Shader.h";
-const char* circleVertex = "#version 330 core\n"
-"layout(location = 0) in vec2 aPos;\n"
-"uniform vec4 color;\n"
-"uniform float scale;\n"
-"uniform vec2 offsets[100];"
-"out vec4 circleColor;\n"
-"out vec2 pos;"
-"void main() {\n"
-"   vec2 offset = offsets[gl_InstanceID];"
-"   gl_Position = vec4(aPos * scale + offset, 0.0, 1.0);"
-"   circleColor = color;\n"
-"   pos = aPos;\n"
-"}\n\0";
-const char* circleFrag = "#version 330 core\n"
-"uniform vec2 resolution;\n"
-"in vec2 pos;\n"
-"in vec4 circleColor;\n"
-"out vec4 FragColor;\n"
-"void main() {\n"
-"   float aspect = resolution.x / resolution.y;\n" 
-"   vec2 coord = pos;\n"
-"   coord.x *= aspect;\n"
-"   float len = length(coord);\n"
-"   if (len > 0.05)\n"
-"       discard;\n"
-"   FragColor = circleColor;\n"
-"}\n\0";
+#include "Shader.h"
+#include "VAO.h"
 
 using namespace std;
 using namespace glm;
 
-double displayRefreshRate(double& prev, GLFWwindow* window);
 GLFWwindow* startGLFW();
+void calculateTranslations(vec2 translations[], unsigned int numTranslations);
+double displayRefreshRate(double& prev, GLFWwindow* window);
 float screenX = 1000.0f;
 float screenY = 800.0f;
 
@@ -68,42 +43,19 @@ int main(void)
         0, 1, 2,
          2, 3, 0
     };
-    GLuint VAO, VBO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-    //stage the VAO
-    glBindVertexArray(VAO);
-    //bind VBO to VAO
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    //vertices into VBO
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    //indices into EBO
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    // Configure the Vertex Attribute so that OpenGL knows how to read the VBO
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-    // Enable the Vertex Attribute so that OpenGL knows to use it
-    glEnableVertexAttribArray(0);
-    //bind everything to 0 so changes are done
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    VAO vao;
+    vao.enableVAO();
+    vao.bindVBO(vertices, sizeof(vertices));
+    vao.bindEBO(indices, sizeof(indices));
+    vao.enableAttributePointer();
+    vao.disableVAO();
 
-    vec2 translations[100];
-    int index = 0;
-    float offset = 0.1f;
-    for (int y = -10; y < 10; y += 2)
-    {
-        for (int x = -10; x < 10; x += 2)
-        {
-            vec2 translation;
-            translation.x = (float)x / 20.0f + offset;
-            translation.y = (float)y / 20.0f + offset;
-            translations[index++] = translation;
-        }
-    }
+    
     Shader shader("src/circleVertex.glsl", "src/circleFrag.glsl");
 
+    const unsigned int n = 100;
+    vec2 translations[n];
+    calculateTranslations(translations, n);
     double prev = glfwGetTime();  // Set the initial 'previous time'.
     while (!glfwWindowShouldClose(window))
     {
@@ -114,9 +66,9 @@ int main(void)
         shader.setFloat("scale", 0.5);
         shader.setVec2f("resolution", screenX, screenY);
         shader.setVec4f("color", 0.3, 0.5, 1.0, 1.0);
-        shader.setVec2fv("offsets", 100, &translations[0]);
+        shader.setVec2fv("offsets", n, &translations[0]);
         // Bind the VAO so OpenGL knows to use it
-        glBindVertexArray(VAO);
+        vao.enableVAO();
         // Draw the triangle using the GL_TRIANGLES primitive
         glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 100);
         glfwSwapBuffers(window);
@@ -125,9 +77,7 @@ int main(void)
 
     //Close things up
     shader.destroy();
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+    vao.destroy();
     // Delete window before ending the program
     glfwDestroyWindow(window);
     // Terminate GLFW before ending the program
@@ -151,6 +101,21 @@ GLFWwindow* startGLFW() {
     gladLoadGL();
     glViewport(0, 0, screenX, screenY);
     return window;
+}
+void calculateTranslations(vec2 translations[], unsigned int numTranslations) {
+    int index = 0;
+    float offset = 0.1f;
+    
+    for (int y = -10; y < 10; y += 2)
+    {
+        for (int x = -10; x < 10; x += 2)
+        {
+            vec2 translation;
+            translation.x = (float)x / 20.0f + offset;
+            translation.y = (float)y / 20.0f + offset;
+            translations[index++] = translation;
+        }
+    }
 }
 double displayRefreshRate(double& prev, GLFWwindow* window) {
     double curr = glfwGetTime();   // Get the current time.
