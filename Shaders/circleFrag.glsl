@@ -12,7 +12,7 @@ void main() {
 	vec2 coord = pos;
 	coord.x *= aspect;
 	float len = length(coord);
-	if (len > 0.05)
-	discard;
+	if (len > 0.3)
+		discard;
 	FragColor = circleColor;
 }

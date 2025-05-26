@@ -3,15 +3,15 @@
 layout(location = 0) in vec2 aPos;
 
 uniform vec4 color;
-uniform float scale;
-uniform vec2 offsets[100];
+uniform mat4 projection;
+uniform mat4 model;
 
 out vec4 circleColor;
 out vec2 pos;
 
 void main() {
-	vec2 offset = offsets[gl_InstanceID];
-	gl_Position = vec4(aPos * scale + offset, 0.0, 1.0);
+	vec4 localPos = projection * model * vec4(aPos, 0.0, 1.0);
+	gl_Position = localPos;
 	circleColor = color;
-	pos = aPos;
+	pos = localPos.xy;
 };

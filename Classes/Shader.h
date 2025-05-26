@@ -25,6 +25,8 @@ public:
 	void setVec2f(const string& name, float v1, float v2);
 	void setVec4f(const string& name, float v1, float v2, float v3, float v4);
     void setVec2fv(const string& name, unsigned const int nElems, vec2* vector);
+    void setVec4fv(const string& name, unsigned const int nElems, vec4* vector);
+    void setMat4f(const string& name, mat4 matrix);
 private:
     void startProgram(GLuint* vShader, GLuint* fShader);
     void startShader(GLuint* shader, const char* shaderPath);

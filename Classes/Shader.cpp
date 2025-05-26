@@ -41,7 +41,14 @@ void Shader::setVec2fv(const string& name, unsigned const int nElems, vec2* vect
 	int ptr = glGetUniformLocation(ID, name.c_str());
 	glUniform2fv(ptr, nElems, value_ptr(*vector));
 };
-
+void Shader::setVec4fv(const string& name, unsigned const int nElems, vec4* vector) {
+	int ptr = glGetUniformLocation(ID, name.c_str());
+	glUniform2fv(ptr, nElems, value_ptr(*vector));
+};
+void Shader::setMat4f(const string& name, mat4 matrix) {
+	int ptr = glGetUniformLocation(ID, name.c_str());
+	glUniformMatrix4fv(ptr, 1, GL_FALSE, &matrix[0][0]);
+};
 //private
 void Shader::startProgram(GLuint* vShader, GLuint* fShader) {
 	glAttachShader(ID, *vShader);

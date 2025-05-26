@@ -13,14 +13,15 @@ using namespace std;
 using namespace glm;
 
 GLFWwindow* startGLFW();
-void calculateTranslations(vec2 translations[], unsigned int numTranslations, float offset);
+void calculateTranslations(vec4 translations[], unsigned int numTranslations, float offset);
 double displayRefreshRate(double& prev, GLFWwindow* window);
-int screenX = 1000;
-int screenY = 800;
+
+int screenX = 980;
+int screenY = 540;
+const unsigned int NUM_CIRCLES = 1;
 
 int main(void)
 {
-    //initialization
     GLFWwindow* window = startGLFW();
     if (window == NULL) {
         return -1;
@@ -28,16 +29,30 @@ int main(void)
    
     GLfloat vertices[] =
     {
-        -0.05f, -0.05f,
+        /*-0.05f, -0.05f,
          0.05f, -0.05f,
          0.05f,  0.05f,
-        -0.05f,  0.05f
+        -0.05f,  0.05f*/
+        -10.0f, -10.0f,
+         10.0f, -10.0f,
+         10.0f,  10.0f,
+        -10.0f,  10.0f
+         /*100.0f, 100.0f,
+         200.0f, 100.0f,
+         200.0f, 200.0f,
+         100.0f, 200.0f,*/
     };
     unsigned int indices[] = {
-
         0, 1, 2,
          2, 3, 0
     };
+    float hori = screenX / 2.0f;
+    float vert = screenY / 2.0f;
+    mat4 projection = ortho(-hori, hori, -vert, vert, -1.0f, 1.0f);
+    mat4 model = mat4(1.0f);
+    float s = 10.0f;
+    model = translate(model, vec3(0.0f, 0.0f, 0.0f));
+    model = scale(model, vec3(s, s, 1.0f));
     VAO vao;
     vao.enableVAO();
     vao.bindVBO(vertices, sizeof(vertices));
@@ -48,24 +63,25 @@ int main(void)
     
     Shader shader("src/Shaders/circleVertex.glsl", "src/Shaders/circleFrag.glsl");
 
-    const unsigned int n = 1;
-    vec2 translations[n];
-    calculateTranslations(translations, n, 20.0f);
-    double prev = glfwGetTime();  // Set the initial 'previous time'.
+    vec4 translations[NUM_CIRCLES];
+    calculateTranslations(translations, NUM_CIRCLES, 20.0f);
+    double prev = glfwGetTime();
     while (!glfwWindowShouldClose(window))
     {
         double dt = displayRefreshRate(prev, window);
+        float g = 9.81 / ((dt * 10e2) * (dt * 10e2));
+
         glClear(GL_COLOR_BUFFER_BIT);
 
         shader.use();
-        shader.setFloat("scale", 0.5f);
         shader.setVec2f("resolution", (float)screenX, (float)screenY);
         shader.setVec4f("color", 0.3f, 0.5f, 1.0f, 1.0f);
-        shader.setVec2fv("offsets", n, &translations[0]);
+        shader.setMat4f("projection", projection);
+        shader.setMat4f("model", model);
 
         vao.enableVAO();
 
-        glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, n);
+        glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_CIRCLES);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -84,6 +100,7 @@ GLFWwindow* startGLFW() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     if (!glfwInit())
         return NULL;
     window = glfwCreateWindow(screenX, screenY, "Hello World", NULL, NULL);
@@ -97,7 +114,7 @@ GLFWwindow* startGLFW() {
     glViewport(0, 0, screenX, screenY);
     return window;
 }
-void calculateTranslations(vec2 translations[], unsigned int numTranslations, float offset) {
+void calculateTranslations(vec4 translations[], unsigned int numTranslations, float offset) {
     int index = 0;
     int rows = numTranslations / 10;
     for (int y = rows; y >= -rows; y -= 2)
@@ -107,9 +124,11 @@ void calculateTranslations(vec2 translations[], unsigned int numTranslations, fl
             if (index == numTranslations) {
                 break;
             }
-            vec2 translation;
+            vec4 translation;
             translation.x = (float)x / offset;
             translation.y = (float)y / offset;
+            translation.z = 0.0f;
+            translation.w = 1.0f;
             translations[index++] = translation;
         }
     }
