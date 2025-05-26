@@ -13,10 +13,10 @@ using namespace std;
 using namespace glm;
 
 GLFWwindow* startGLFW();
-void calculateTranslations(vec2 translations[], unsigned int numTranslations);
+void calculateTranslations(vec2 translations[], unsigned int numTranslations, float offset);
 double displayRefreshRate(double& prev, GLFWwindow* window);
-float screenX = 1000.0f;
-float screenY = 800.0f;
+int screenX = 1000;
+int screenY = 800;
 
 int main(void)
 {
@@ -28,18 +28,13 @@ int main(void)
    
     GLfloat vertices[] =
     {
-       /*1.0f, 1.0f, 
-       1.0f, -1.0f, 
-       -1.0f, -1.0f, 
-       -1.0f, 1.0f*/
         -0.05f, -0.05f,
          0.05f, -0.05f,
          0.05f,  0.05f,
         -0.05f,  0.05f
     };
     unsigned int indices[] = {
-    /*    0, 1, 3,
-        1, 2, 3*/
+
         0, 1, 2,
          2, 3, 0
     };
@@ -53,9 +48,9 @@ int main(void)
     
     Shader shader("src/circleVertex.glsl", "src/circleFrag.glsl");
 
-    const unsigned int n = 100;
+    const unsigned int n = 1;
     vec2 translations[n];
-    calculateTranslations(translations, n);
+    calculateTranslations(translations, n, 20.0f);
     double prev = glfwGetTime();  // Set the initial 'previous time'.
     while (!glfwWindowShouldClose(window))
     {
@@ -63,14 +58,14 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);
 
         shader.use();
-        shader.setFloat("scale", 0.5);
-        shader.setVec2f("resolution", screenX, screenY);
-        shader.setVec4f("color", 0.3, 0.5, 1.0, 1.0);
+        shader.setFloat("scale", 0.5f);
+        shader.setVec2f("resolution", (float)screenX, (float)screenY);
+        shader.setVec4f("color", 0.3f, 0.5f, 1.0f, 1.0f);
         shader.setVec2fv("offsets", n, &translations[0]);
-        // Bind the VAO so OpenGL knows to use it
+
         vao.enableVAO();
-        // Draw the triangle using the GL_TRIANGLES primitive
-        glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 100);
+
+        glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, n);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -102,17 +97,19 @@ GLFWwindow* startGLFW() {
     glViewport(0, 0, screenX, screenY);
     return window;
 }
-void calculateTranslations(vec2 translations[], unsigned int numTranslations) {
+void calculateTranslations(vec2 translations[], unsigned int numTranslations, float offset) {
     int index = 0;
-    float offset = 0.1f;
-    
-    for (int y = -10; y < 10; y += 2)
+    int rows = numTranslations / 10;
+    for (int y = rows; y >= -rows; y -= 2)
     {
         for (int x = -10; x < 10; x += 2)
         {
+            if (index == numTranslations) {
+                break;
+            }
             vec2 translation;
-            translation.x = (float)x / 20.0f + offset;
-            translation.y = (float)y / 20.0f + offset;
+            translation.x = (float)x / offset;
+            translation.y = (float)y / offset;
             translations[index++] = translation;
         }
     }
