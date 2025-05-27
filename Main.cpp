@@ -54,18 +54,18 @@ int main(void)
     Shader shader("src/Shaders/circleVertex.glsl", "src/Shaders/circleFrag.glsl");
 
     double prev = glfwGetTime();
-    float g = 1.0f;
+    float g = 5.0f;
     vec2 velocities(0);
     vec2 positions(0);
     while (!glfwWindowShouldClose(window))
     {
         float dt = displayRefreshRate(prev, window);
-        dt = dt * 10e1;
+        dt = dt*10;
         velocities.y -= g * dt;
         mat4 model = mat4(1.0f);
         float s = 10.0f;
-        if (positions.y < -vert + 20.0f){
-            velocities *= -1 * 0.1f;
+        if (positions.y < -vert + s){
+            velocities *= -1 ;
         }
         positions += velocities * dt;
         cout << positions.y << endl;
