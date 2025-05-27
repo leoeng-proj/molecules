@@ -11,12 +11,12 @@
 VAO::VAO() {
 	glGenVertexArrays(1, &vao);
 }
-void VAO::bindVBO(GLfloat vertices[], size_t size) {
+void VAO::bindVBO(GLfloat* vertices, size_t size) {
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
 }
-void VAO::bindEBO(unsigned int indices[], size_t size) {
+void VAO::bindEBO(unsigned int* indices, size_t size) {
 	glGenBuffers(1, &ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indices, GL_STATIC_DRAW);

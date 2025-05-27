@@ -6,19 +6,22 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <array>
 #include "Classes/Shader.h"
 #include "Classes/VAO.h"
+#include "Classes/Circle.h"
 
 using namespace std;
 using namespace glm;
 
 GLFWwindow* startGLFW();
 void calculateTranslations(vec4 translations[], unsigned int numTranslations, float offset);
-float displayRefreshRate(double& prev, GLFWwindow* window);
+float displayRefreshRate(float& prev, GLFWwindow* window);
 
 int screenX = 980;
 int screenY = 540;
 const unsigned int NUM_CIRCLES = 1;
+float g = 5.0f;
 
 int main(void)
 {
@@ -27,25 +30,16 @@ int main(void)
         return -1;
     }
 
-    
-    GLfloat vertices[] =
-    {
-        -10.0f, -10.0f,
-         10.0f, -10.0f,
-         10.0f,  10.0f,
-        -10.0f,  10.0f
-    };
+ 
+    Circle c1(0, 0);
+    array<GLfloat, 8> vertices = c1.getVertices();
     unsigned int indices[] = {
         0, 1, 2, 2, 3, 0
     };
-    float hori = screenX / 2.0f;
-    float vert = screenY / 2.0f;
-    mat4 projection = ortho(-hori, hori, -vert, vert, -1.0f, 1.0f);
-    //mat4 projection = ortho(0.0f, (float)screenX, 0.0f, (float)screenY, -1.0f, 1.0f);
     
     VAO vao;
     vao.enableVAO();
-    vao.bindVBO(vertices, sizeof(vertices));
+    vao.bindVBO(vertices.data(), vertices.size() * sizeof(GLfloat));
     vao.bindEBO(indices, sizeof(indices));
     vao.enableAttributePointer();
     vao.disableVAO();
@@ -53,24 +47,26 @@ int main(void)
     
     Shader shader("src/Shaders/circleVertex.glsl", "src/Shaders/circleFrag.glsl");
 
-    double prev = glfwGetTime();
-    float g = 5.0f;
-    vec2 velocities(0);
-    vec2 positions(0);
+    float hori = screenX / 2.0f;
+    float vert = screenY / 2.0f;
+    mat4 projection = ortho(-hori, hori, -vert, vert, -1.0f, 1.0f);
+
+    float prev = (float)glfwGetTime();
     while (!glfwWindowShouldClose(window))
     {
         float dt = displayRefreshRate(prev, window);
-        dt = dt*10;
-        velocities.y -= g * dt;
-        mat4 model = mat4(1.0f);
+        dt *= 10;
+        vec2 newVel = c1.getVel() - vec2(0.0f, (g * dt));
+
+        c1.setVel(newVel);
         float s = 10.0f;
-        if (positions.y < -vert + s){
-            velocities *= -1 ;
+        if (c1.getPos().y < -vert + s) {
+            c1.setVel(c1.getVel() * -1.0f);
         }
-        positions += velocities * dt;
-        cout << positions.y << endl;
-        model = translate(model, vec3(positions, 0.0f));
-        model = scale(model, vec3(s, s, 1.0f));
+        c1.setPos(c1.getPos() + c1.getVel() * dt);
+        mat4 model = mat4(1.0f);
+        model = translate(model, vec3(c1.getPos(), 0.0f));
+        model = scale(model, vec3(RADIUS, RADIUS, 1.0f));
  
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -134,8 +130,8 @@ void calculateTranslations(vec4 translations[], unsigned int numTranslations, fl
         }
     }
 }
-float displayRefreshRate(double& prev, GLFWwindow* window) {
-    float curr = glfwGetTime();   // Get the current time.
+float displayRefreshRate(float& prev, GLFWwindow* window) {
+    float curr = (float)glfwGetTime();   // Get the current time.
     float dt = curr - prev; // Work out the time elapsed over the last frame.
     prev = curr;          // Set the 'previous time' for the next frame to use.
     if (dt > 0.0) {

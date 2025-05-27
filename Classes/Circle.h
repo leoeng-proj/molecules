@@ -5,20 +5,25 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <array>
 
 using namespace std;
 using namespace glm;
 
-static const float MASS = 10;
-static const float RADIUS = 1;
+constexpr float MASS = 1.0f;
+constexpr float RADIUS = 10.0f; //scale matrix
 
 class Circle {
 private:
+	vec2 vel;
 	vec2 pos;
 public:
-	Circle();
-	Circle(float x, float y, float r);
-
+	Circle(float x, float y);
+	vec2 getVel();
+	vec2 getPos();
+	void setVel(vec2);
+	void setPos(vec2);
+	array<GLfloat, 8> getVertices();
 };
 
 #endif

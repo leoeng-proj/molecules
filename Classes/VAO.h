@@ -17,8 +17,8 @@ private:
 	GLuint vao, vbo, ebo;
 public:
 	VAO();
-	void bindVBO(GLfloat vertices[], size_t size);
-	void bindEBO(unsigned int indices[], size_t size);
+	void bindVBO(GLfloat* vertices, size_t size);
+	void bindEBO(unsigned int* indices, size_t size);
 	void enableVAO();
 	void disableVAO();
 	void enableAttributePointer();
