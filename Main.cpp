@@ -14,7 +14,7 @@ using namespace glm;
 
 GLFWwindow* startGLFW();
 void calculateTranslations(vec4 translations[], unsigned int numTranslations, float offset);
-double displayRefreshRate(double& prev, GLFWwindow* window);
+float displayRefreshRate(double& prev, GLFWwindow* window);
 
 int screenX = 980;
 int screenY = 540;
@@ -26,33 +26,23 @@ int main(void)
     if (window == NULL) {
         return -1;
     }
-   
+
+    
     GLfloat vertices[] =
     {
-        /*-0.05f, -0.05f,
-         0.05f, -0.05f,
-         0.05f,  0.05f,
-        -0.05f,  0.05f*/
         -10.0f, -10.0f,
          10.0f, -10.0f,
          10.0f,  10.0f,
         -10.0f,  10.0f
-         /*100.0f, 100.0f,
-         200.0f, 100.0f,
-         200.0f, 200.0f,
-         100.0f, 200.0f,*/
     };
     unsigned int indices[] = {
-        0, 1, 2,
-         2, 3, 0
+        0, 1, 2, 2, 3, 0
     };
     float hori = screenX / 2.0f;
     float vert = screenY / 2.0f;
     mat4 projection = ortho(-hori, hori, -vert, vert, -1.0f, 1.0f);
-    mat4 model = mat4(1.0f);
-    float s = 10.0f;
-    model = translate(model, vec3(0.0f, 0.0f, 0.0f));
-    model = scale(model, vec3(s, s, 1.0f));
+    //mat4 projection = ortho(0.0f, (float)screenX, 0.0f, (float)screenY, -1.0f, 1.0f);
+    
     VAO vao;
     vao.enableVAO();
     vao.bindVBO(vertices, sizeof(vertices));
@@ -63,18 +53,29 @@ int main(void)
     
     Shader shader("src/Shaders/circleVertex.glsl", "src/Shaders/circleFrag.glsl");
 
-    vec4 translations[NUM_CIRCLES];
-    calculateTranslations(translations, NUM_CIRCLES, 20.0f);
     double prev = glfwGetTime();
+    float g = 1.0f;
+    vec2 velocities(0);
+    vec2 positions(0);
     while (!glfwWindowShouldClose(window))
     {
-        double dt = displayRefreshRate(prev, window);
-        float g = 9.81 / ((dt * 10e2) * (dt * 10e2));
-
+        float dt = displayRefreshRate(prev, window);
+        dt = dt * 10e1;
+        velocities.y -= g * dt;
+        mat4 model = mat4(1.0f);
+        float s = 10.0f;
+        if (positions.y < -vert + 20.0f){
+            velocities *= -1 * 0.1f;
+        }
+        positions += velocities * dt;
+        cout << positions.y << endl;
+        model = translate(model, vec3(positions, 0.0f));
+        model = scale(model, vec3(s, s, 1.0f));
+ 
         glClear(GL_COLOR_BUFFER_BIT);
 
         shader.use();
-        shader.setVec2f("resolution", (float)screenX, (float)screenY);
+        //shader.setVec2f("resolution", (float)screenX, (float)screenY);
         shader.setVec4f("color", 0.3f, 0.5f, 1.0f, 1.0f);
         shader.setMat4f("projection", projection);
         shader.setMat4f("model", model);
@@ -133,9 +134,9 @@ void calculateTranslations(vec4 translations[], unsigned int numTranslations, fl
         }
     }
 }
-double displayRefreshRate(double& prev, GLFWwindow* window) {
-    double curr = glfwGetTime();   // Get the current time.
-    double dt = curr - prev; // Work out the time elapsed over the last frame.
+float displayRefreshRate(double& prev, GLFWwindow* window) {
+    float curr = glfwGetTime();   // Get the current time.
+    float dt = curr - prev; // Work out the time elapsed over the last frame.
     prev = curr;          // Set the 'previous time' for the next frame to use.
     if (dt > 0.0) {
         double fps = 1.0 / dt;

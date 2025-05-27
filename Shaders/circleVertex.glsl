@@ -14,4 +14,5 @@ void main() {
 	gl_Position = localPos;
 	circleColor = color;
 	pos = localPos.xy;
+	pos = aPos;
 };
