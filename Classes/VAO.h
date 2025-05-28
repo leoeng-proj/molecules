@@ -16,7 +16,7 @@ using namespace std;
 using namespace glm;
 class VAO {
 private:
-	GLuint vao, vbo, ebo, matrices;
+	GLuint vao, vbo, ebo, matrices, velocities;
 	static GLfloat vertices[8];
 	static unsigned int indices[6];
 public:
@@ -27,6 +27,8 @@ public:
 	//void bindEBO(unsigned int* indices, size_t size);
 	void bindMatrices(mat4 instanceMatrices[], size_t size, const unsigned int NUM_CIRCLES);
 	void updateMatrices(mat4 instanceMatrices[], size_t size);
+	void bindVelocities(float velocities[], size_t size, const unsigned int NUM_CIRCLES);
+	void updateVelocities(float updatedVelocities[], size_t size);
 	void enableVAO();
 	void disableVAO();
 	void enableAttributePointer();

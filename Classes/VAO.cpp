@@ -33,16 +33,25 @@ void VAO::bindEBO() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 }
-
 void VAO::bindMatrices(mat4 instanceMatrices[], size_t size, const unsigned int NUM_CIRCLES) {
 	glBindVertexArray(vao);
 	glGenBuffers(1, &matrices);
 	glBindBuffer(GL_ARRAY_BUFFER, matrices);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(mat4) * NUM_CIRCLES, &instanceMatrices[0], GL_STATIC_DRAW);
 }
+void VAO::bindVelocities(float instanceVelocities[], size_t size, const unsigned int NUM_CIRCLES) {
+	glBindVertexArray(vao);
+	glGenBuffers(1, &velocities);
+	glBindBuffer(GL_ARRAY_BUFFER, velocities);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * NUM_CIRCLES, &instanceVelocities[0], GL_STATIC_DRAW);
+}
 void VAO::updateMatrices(mat4 updatedMatrices[], size_t size) {
 	glBindBuffer(GL_ARRAY_BUFFER, matrices);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, size, updatedMatrices);
+}
+void VAO::updateVelocities(float updatedVelocities[], size_t size) {
+	glBindBuffer(GL_ARRAY_BUFFER, velocities);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, size, updatedVelocities);
 }
 void VAO::enableVAO() {
 	glBindVertexArray(vao);
@@ -58,19 +67,28 @@ void VAO::enableAttributePointer() {
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0); //aPos
 
+	glBindBuffer(GL_ARRAY_BUFFER, velocities);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 1 * sizeof(float), (void*)0); //velocity
+
 	glBindBuffer(GL_ARRAY_BUFFER, matrices);
 	std::size_t vec4Size = sizeof(glm::vec4); //instanceMatrix
 	for (int i = 0; i < 4; i++) {
-		glEnableVertexAttribArray(2 + i); // locations 2, 3, 4, 5
-		glVertexAttribPointer(2 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * vec4Size));
-		glVertexAttribDivisor(2 + i, 1);  // Advance per instance, not per vertex
+		glEnableVertexAttribArray(3 + i); // locations 2, 3, 4, 5
+		glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * vec4Size));
+		glVertexAttribDivisor(3 + i, 1);  // Advance per instance, not per vertex
 	}
+
+	
+
 	glBindVertexArray(0);
 }
 void VAO::destroy() {
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &ebo);
+	glDeleteBuffers(1, &matrices);
+	glDeleteBuffers(1, &velocities);
 }
 
 //void VAO::bindVBO(GLfloat* vertices, size_t size) {

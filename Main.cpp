@@ -18,11 +18,11 @@ GLFWwindow* startGLFW();
 void placeCircles(Circle circles[], mat4 modelMatrices[], float offset);
 float displayRefreshRate(float& prev, GLFWwindow* window);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-void runUpdates(Circle circles[], mat4 modelMatrices[], float dt);
+void runUpdates(Circle circles[], mat4 modelMatrices[], float velocities[], float dt);
 vec2 dim(980.0f, 540.0f);
-const unsigned int NUM_CIRCLES = 10;
+const unsigned int NUM_CIRCLES = 100;
 float g = 5.0f;
-bool paused = false;
+bool paused = true;
 
 int main(void)
 {
@@ -33,7 +33,7 @@ int main(void)
 
     Circle circles[NUM_CIRCLES];
     mat4 modelMatrices[NUM_CIRCLES];
-
+    float velocities[NUM_CIRCLES]{};
     placeCircles(circles, modelMatrices, 40.0f);
     
     VAO vao;
@@ -41,6 +41,7 @@ int main(void)
     vao.bindVBO();
     vao.bindEBO();
     vao.bindMatrices(modelMatrices, sizeof(modelMatrices), NUM_CIRCLES);
+    vao.bindVelocities(velocities, sizeof(velocities), NUM_CIRCLES);
     vao.enableAttributePointer();
     vao.disableVAO();
 
@@ -49,7 +50,6 @@ int main(void)
     float hori = dim.x / 2.0f;
     float vert = dim.y / 2.0f;
     mat4 projection = ortho(-hori, hori, -vert, vert, -1.0f, 1.0f);
-    //vec2 velocity(0);
     float prev = (float)glfwGetTime();
     while (!glfwWindowShouldClose(window)){
         glfwPollEvents();
@@ -57,12 +57,13 @@ int main(void)
         float dt = displayRefreshRate(prev, window);
         dt *= 10;
         if (!paused) {
-            runUpdates(circles, modelMatrices, dt);
+            runUpdates(circles, modelMatrices, velocities, dt);
         }
         
         vao.updateMatrices(modelMatrices, sizeof(modelMatrices));
+        vao.updateVelocities(velocities, sizeof(velocities));
         shader.use();
-        shader.setVec4f("color", 0.3f, 0.5f, 1.0f, 1.0f);
+        //shader.setFloat("vel", 1.0f, 0.3f, 0.3f, 1.0f);
         shader.setMat4f("projection", projection);
 
         vao.enableVAO();
@@ -138,10 +139,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         paused = !paused;
     }
 }
-void runUpdates(Circle circles[], mat4 modelMatrices[], float dt) {
+void runUpdates(Circle circles[], mat4 modelMatrices[], float velocities[], float dt) {
     for (int i = 0; i < NUM_CIRCLES; ++i) {
         circles[i].gravity(dt);
         circles[i].updatePos(dt, dim);
+        velocities[i] = dot(circles[i].getVel(), circles[i].getVel()) / 10e2;
         modelMatrices[i] = mat4(1.0f);
         modelMatrices[i] = translate(modelMatrices[i], vec3(circles[i].getPos(), 0.0f));
         modelMatrices[i] = scale(modelMatrices[i], vec3(RADIUS, RADIUS, 1.0f));

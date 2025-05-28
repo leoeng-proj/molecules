@@ -19,19 +19,15 @@ class Circle {
 private:
 	vec2 vel;
 	vec2 pos;
-	mat4 modelMatrix;
 	void checkBounds(vec2);
 public:
 	Circle();
 	Circle(vec2);
 	vec2 getVel();
 	vec2 getPos();
-	mat4 getMatrix();
 	void setVel(vec2);
 	void setPos(vec2);
 	void updatePos(float, vec2);
-	void setMatrix(mat4);
-	array<GLfloat, 8> getVertices();
 	void gravity(float);
 };
 
