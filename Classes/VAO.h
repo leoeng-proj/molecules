@@ -12,13 +12,17 @@
 /*
 * make sure VAO is enabled BEFORE calling either bind function
 */
+using namespace std;
+using namespace glm;
 class VAO {
 private:
-	GLuint vao, vbo, ebo;
+	GLuint vao, vbo, ebo, matrices;
 public:
 	VAO();
 	void bindVBO(GLfloat* vertices, size_t size);
 	void bindEBO(unsigned int* indices, size_t size);
+	void bindMatrices(mat4 instanceMatrices[], size_t size, const unsigned int NUM_CIRCLES);
+	void updateMatrices(mat4 instanceMatrices[], size_t size);
 	void enableVAO();
 	void disableVAO();
 	void enableAttributePointer();

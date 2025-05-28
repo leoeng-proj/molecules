@@ -10,11 +10,17 @@ vec2 Circle::getVel() {
 vec2 Circle::getPos() {
 	return pos;
 }
+mat4 Circle::getMatrix() {
+	return modelMatrix;
+}
 void Circle::setVel(vec2 v) {
 	vel = v;
 }
 void Circle::setPos(vec2 p) {
 	pos = p;
+}
+void Circle::setMatrix(mat4 mat) {
+	modelMatrix = mat;
 }
 array<GLfloat, 8> Circle::getVertices() {
 	array<GLfloat, 8> arr = {

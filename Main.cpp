@@ -20,7 +20,7 @@ float displayRefreshRate(float& prev, GLFWwindow* window);
 
 int screenX = 980;
 int screenY = 540;
-const unsigned int NUM_CIRCLES = 2;
+const unsigned int NUM_CIRCLES = 10;
 float g = 5.0f;
 
 int main(void)
@@ -30,73 +30,68 @@ int main(void)
         return -1;
     }
 
- 
-    Circle c1(0, 0);
-    array<GLfloat, 8> vertices = c1.getVertices();
+    GLfloat vertices[] = {
+        -10.0f, -10.0f,
+        10.0f, -10.0f,
+        10.0f, 10.0f,
+        -10.0f, 10.0f
+    };
+   /* Circle c1(0, 0);
+    array<GLfloat, 8> verts = c1.getVertices();*/
     unsigned int indices[] = {
         0, 1, 2, 2, 3, 0
     };
-    
-    GLfloat allVertices[NUM_CIRCLES * 8];
-    unsigned int allIndices[NUM_CIRCLES * 6];
-    int k = 0;
-    for (int i = 0; i < NUM_CIRCLES; i++) {
-        Circle c(0.0f + i * 20.0f, 0.0f + i * 20.0f);
-        array<GLfloat, 8> vertices = c.getVertices();
-        for (int j = 0; j < 8; j++) {
-            allVertices[j + i * 8] = vertices.data()[j];
-        };
-        allIndices[k] = k;
-        allIndices[k + 1] = k + 1;
-        allIndices[k + 2] = k + 2;
-        allIndices[k + 3] = k + 2;
-        allIndices[k + 4] = k + 3;
-        allIndices[k + 5] = k;
-        k += 6;
-    };
 
+    mat4 modelMatrices[NUM_CIRCLES];
+    for (unsigned int i = 0; i < NUM_CIRCLES; i++) {
+        mat4 model = mat4(1.0f);
+        model = translate(model, vec3(i * 40.f, 0, 0));
+        model = scale(model, vec3(RADIUS, RADIUS, 1.0f));
+        modelMatrices[i] = model;
+    }
     VAO vao;
     vao.enableVAO();
-    vao.bindVBO(allVertices, sizeof(allVertices));
-    vao.bindEBO(allIndices, sizeof(allIndices));
+    vao.bindVBO(vertices, sizeof(vertices));
+    vao.bindEBO(indices, sizeof(indices));
+    vao.bindMatrices(modelMatrices, sizeof(modelMatrices), NUM_CIRCLES);
     vao.enableAttributePointer();
     vao.disableVAO();
 
-    
     Shader shader("src/Shaders/circleVertex.glsl", "src/Shaders/circleFrag.glsl");
 
     float hori = screenX / 2.0f;
     float vert = screenY / 2.0f;
     mat4 projection = ortho(-hori, hori, -vert, vert, -1.0f, 1.0f);
-
+    vec2 velocity(0);
     float prev = (float)glfwGetTime();
-    while (!glfwWindowShouldClose(window))
-    {
-
+    while (!glfwWindowShouldClose(window)){
         glClear(GL_COLOR_BUFFER_BIT);
         float dt = displayRefreshRate(prev, window);
         dt *= 10;
-        vec2 newVel = c1.getVel() - vec2(0.0f, (g * dt));
-
-        c1.setVel(newVel);
-        float s = 10.0f;
-        if (c1.getPos().y < -vert + s) {
-            c1.setVel(c1.getVel() * -1.0f);
-        }
-        c1.setPos(c1.getPos() + c1.getVel() * dt);
+        //vec2 newVel = c1.getVel() - vec2(0.0f, (g * dt));
+        //c1.setVel(newVel);
+        //float s = 10.0f;
+        //if (c1.getPos().y < -vert + s) {
+            //c1.setVel(c1.getVel() * -1.0f);
+        //}
+        //c1.setPos(c1.getPos() + c1.getVel() * dt);
         mat4 model = mat4(1.0f);
-        model = translate(model, vec3(c1.getPos(), 0.0f));
+        //model = translate(model, vec3(c1.getPos(), 0.0f));
         model = scale(model, vec3(RADIUS, RADIUS, 1.0f));
- 
+        velocity = velocity - vec2(0.0f, (g * dt));
+        for (int i = 0; i < NUM_CIRCLES; ++i) {
+            modelMatrices[i] = mat4(1.0f);
 
+            modelMatrices[i] = translate(modelMatrices[i], vec3(velocity*dt, 0.0f));
+            modelMatrices[i] = scale(modelMatrices[i], vec3(RADIUS, RADIUS, 1.0f));
+        }
+        vao.updateMatrices(modelMatrices, sizeof(modelMatrices));
         shader.use();
-        //shader.setVec2f("resolution", (float)screenX, (float)screenY);
         shader.setVec4f("color", 0.3f, 0.5f, 1.0f, 1.0f);
         shader.setMat4f("projection", projection);
-        shader.setMat4f("model", model);
 
         vao.enableVAO();
-
+        //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_CIRCLES);
         glfwSwapBuffers(window);
         glfwPollEvents();
