@@ -20,7 +20,7 @@ float displayRefreshRate(float& prev, GLFWwindow* window);
 
 int screenX = 980;
 int screenY = 540;
-const unsigned int NUM_CIRCLES = 1;
+const unsigned int NUM_CIRCLES = 2;
 float g = 5.0f;
 
 int main(void)
@@ -37,10 +37,28 @@ int main(void)
         0, 1, 2, 2, 3, 0
     };
     
+    GLfloat allVertices[NUM_CIRCLES * 8];
+    unsigned int allIndices[NUM_CIRCLES * 6];
+    int k = 0;
+    for (int i = 0; i < NUM_CIRCLES; i++) {
+        Circle c(0.0f + i * 20.0f, 0.0f + i * 20.0f);
+        array<GLfloat, 8> vertices = c.getVertices();
+        for (int j = 0; j < 8; j++) {
+            allVertices[j + i * 8] = vertices.data()[j];
+        };
+        allIndices[k] = k;
+        allIndices[k + 1] = k + 1;
+        allIndices[k + 2] = k + 2;
+        allIndices[k + 3] = k + 2;
+        allIndices[k + 4] = k + 3;
+        allIndices[k + 5] = k;
+        k += 6;
+    };
+
     VAO vao;
     vao.enableVAO();
-    vao.bindVBO(vertices.data(), vertices.size() * sizeof(GLfloat));
-    vao.bindEBO(indices, sizeof(indices));
+    vao.bindVBO(allVertices, sizeof(allVertices));
+    vao.bindEBO(allIndices, sizeof(allIndices));
     vao.enableAttributePointer();
     vao.disableVAO();
 
@@ -54,6 +72,8 @@ int main(void)
     float prev = (float)glfwGetTime();
     while (!glfwWindowShouldClose(window))
     {
+
+        glClear(GL_COLOR_BUFFER_BIT);
         float dt = displayRefreshRate(prev, window);
         dt *= 10;
         vec2 newVel = c1.getVel() - vec2(0.0f, (g * dt));
@@ -68,7 +88,6 @@ int main(void)
         model = translate(model, vec3(c1.getPos(), 0.0f));
         model = scale(model, vec3(RADIUS, RADIUS, 1.0f));
  
-        glClear(GL_COLOR_BUFFER_BIT);
 
         shader.use();
         //shader.setVec2f("resolution", (float)screenX, (float)screenY);
