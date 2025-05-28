@@ -28,6 +28,7 @@ public:
 	void setVel(vec2);
 	void setPos(vec2);
 	void updatePos(float, vec2);
+	void collisions(Circle[], const unsigned int);
 	void gravity(float);
 };
 

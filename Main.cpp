@@ -15,12 +15,12 @@ using namespace std;
 using namespace glm;
 
 GLFWwindow* startGLFW();
-void placeCircles(Circle circles[], mat4 modelMatrices[], float offset);
+void placeCircles(Circle* circles, mat4 modelMatrices[], float offset);
 float displayRefreshRate(float& prev, GLFWwindow* window);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-void runUpdates(Circle circles[], mat4 modelMatrices[], float velocities[], float dt);
+void runUpdates(Circle* circles, mat4 modelMatrices[], float velocities[], float dt);
 vec2 dim(980.0f, 540.0f);
-const unsigned int NUM_CIRCLES = 100;
+const unsigned int NUM_CIRCLES = 10;
 float g = 5.0f;
 bool paused = true;
 
@@ -34,7 +34,7 @@ int main(void)
     Circle circles[NUM_CIRCLES];
     mat4 modelMatrices[NUM_CIRCLES];
     float velocities[NUM_CIRCLES]{};
-    placeCircles(circles, modelMatrices, 40.0f);
+    placeCircles(&circles[0], modelMatrices, -5.0f);
     
     VAO vao;
     vao.enableVAO();
@@ -101,24 +101,19 @@ GLFWwindow* startGLFW() {
     glViewport(0, 0, (int)dim.x, (int)dim.y);
     return window;
 }
-void placeCircles(Circle circles[], mat4 modelMatrices[], float offset) {
-    int numCols = 10;  
-    int numRows = NUM_CIRCLES / numCols;  
-    float startX = -((numCols - 1) * offset) / 2.0f;
-    float startY = -((numRows - 1) * offset) / 2.0f;
-    int i = 0;
-    for (int row = 0; row < numRows; ++row) {
-        for (int col = 0; col < numCols; ++col) {
-            if (i == NUM_CIRCLES) break;
-            float x = startX + col * offset;
-            float y = startY + row * offset;
-            circles[i].setPos(vec2(x, y));
-            mat4 model = mat4(1.0f);
-            model = translate(model, vec3(x, y, 0));
-            model = scale(model, vec3(RADIUS, RADIUS, 1.0f));
-            modelMatrices[i] = model;
-            i++;
-        }
+void placeCircles(Circle* circles, mat4 modelMatrices[], float offset) {
+    int row = (int)sqrt(NUM_CIRCLES);
+    int col = (NUM_CIRCLES - 1) / row + 1;
+    float spacing = RADIUS * 2 + offset;
+    for (int i = 0; i < NUM_CIRCLES; i++) {
+        float x = (i % row - row / 2.0f + 0.5f) * spacing;
+        float y = (i / row - col / 2.0f + 0.5f) * spacing;
+        //cout << x << ", " << y << endl;
+        circles[i].setPos(vec2(x, y));
+        mat4 model = mat4(1.0f);
+        model = translate(model, vec3(x, y, 0));
+        model = scale(model, vec3(RADIUS, RADIUS, 1.0f));
+        modelMatrices[i] = model;
     }
 }
 float displayRefreshRate(float& prev, GLFWwindow* window) {
@@ -139,9 +134,10 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         paused = !paused;
     }
 }
-void runUpdates(Circle circles[], mat4 modelMatrices[], float velocities[], float dt) {
+void runUpdates(Circle* circles, mat4 modelMatrices[], float velocities[], float dt) {
     for (int i = 0; i < NUM_CIRCLES; ++i) {
         circles[i].gravity(dt);
+        circles[i].collisions(circles, NUM_CIRCLES);
         circles[i].updatePos(dt, dim);
         velocities[i] = dot(circles[i].getVel(), circles[i].getVel()) / 10e2;
         modelMatrices[i] = mat4(1.0f);
