@@ -17,10 +17,14 @@ using namespace glm;
 class VAO {
 private:
 	GLuint vao, vbo, ebo, matrices;
+	static GLfloat vertices[8];
+	static unsigned int indices[6];
 public:
 	VAO();
-	void bindVBO(GLfloat* vertices, size_t size);
-	void bindEBO(unsigned int* indices, size_t size);
+	void bindVBO();
+	void bindEBO();
+	//void bindVBO(GLfloat* vertices, size_t size);
+	//void bindEBO(unsigned int* indices, size_t size);
 	void bindMatrices(mat4 instanceMatrices[], size_t size, const unsigned int NUM_CIRCLES);
 	void updateMatrices(mat4 instanceMatrices[], size_t size);
 	void enableVAO();

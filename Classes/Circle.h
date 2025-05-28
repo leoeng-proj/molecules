@@ -6,27 +6,33 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <array>
+#include <cstdlib>
 
 using namespace std;
 using namespace glm;
 
 constexpr float MASS = 1.0f;
 constexpr float RADIUS = 10.0f; //scale matrix
+constexpr float GRAVITY = 5.0f; //scale matrix
 
 class Circle {
 private:
 	vec2 vel;
 	vec2 pos;
 	mat4 modelMatrix;
+	void checkBounds(vec2);
 public:
-	Circle(float x, float y);
+	Circle();
+	Circle(vec2);
 	vec2 getVel();
 	vec2 getPos();
 	mat4 getMatrix();
 	void setVel(vec2);
 	void setPos(vec2);
+	void updatePos(float, vec2);
 	void setMatrix(mat4);
 	array<GLfloat, 8> getVertices();
+	void gravity(float);
 };
 
 #endif

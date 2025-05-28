@@ -8,21 +8,32 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "VAO.h"
 
+GLfloat VAO::vertices[8] = {
+		-10.0f, -10.0f,
+		10.0f, -10.0f,
+		10.0f, 10.0f,
+		-10.0f, 10.0f
+};
+unsigned int VAO::indices[6] = {
+	0, 1, 2, 2, 3, 0
+};
+
 VAO::VAO() {
 	glGenVertexArrays(1, &vao);
 }
-void VAO::bindVBO(GLfloat* vertices, size_t size) {
+void VAO::bindVBO() {
 	glBindVertexArray(vao);
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 }
-void VAO::bindEBO(unsigned int* indices, size_t size) {
+void VAO::bindEBO() {
 	glBindVertexArray(vao);
 	glGenBuffers(1, &ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 }
+
 void VAO::bindMatrices(mat4 instanceMatrices[], size_t size, const unsigned int NUM_CIRCLES) {
 	glBindVertexArray(vao);
 	glGenBuffers(1, &matrices);
@@ -61,3 +72,16 @@ void VAO::destroy() {
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &ebo);
 }
+
+//void VAO::bindVBO(GLfloat* vertices, size_t size) {
+//	glBindVertexArray(vao);
+//	glGenBuffers(1, &vbo);
+//	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+//	glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+//}
+//void VAO::bindEBO(unsigned int* indices, size_t size) {
+//	glBindVertexArray(vao);
+//	glGenBuffers(1, &ebo);
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+//	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indices, GL_STATIC_DRAW);
+//}

@@ -15,13 +15,14 @@ using namespace std;
 using namespace glm;
 
 GLFWwindow* startGLFW();
-void calculateTranslations(vec4 translations[], unsigned int numTranslations, float offset);
+void placeCircles(Circle circles[], mat4 modelMatrices[], float offset);
 float displayRefreshRate(float& prev, GLFWwindow* window);
-
-int screenX = 980;
-int screenY = 540;
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void runUpdates(Circle circles[], mat4 modelMatrices[], float dt);
+vec2 dim(980.0f, 540.0f);
 const unsigned int NUM_CIRCLES = 10;
 float g = 5.0f;
+bool paused = false;
 
 int main(void)
 {
@@ -30,68 +31,41 @@ int main(void)
         return -1;
     }
 
-    GLfloat vertices[] = {
-        -10.0f, -10.0f,
-        10.0f, -10.0f,
-        10.0f, 10.0f,
-        -10.0f, 10.0f
-    };
-   /* Circle c1(0, 0);
-    array<GLfloat, 8> verts = c1.getVertices();*/
-    unsigned int indices[] = {
-        0, 1, 2, 2, 3, 0
-    };
-
+    Circle circles[NUM_CIRCLES];
     mat4 modelMatrices[NUM_CIRCLES];
-    for (unsigned int i = 0; i < NUM_CIRCLES; i++) {
-        mat4 model = mat4(1.0f);
-        model = translate(model, vec3(i * 40.f, 0, 0));
-        model = scale(model, vec3(RADIUS, RADIUS, 1.0f));
-        modelMatrices[i] = model;
-    }
+
+    placeCircles(circles, modelMatrices, 40.0f);
+    
     VAO vao;
     vao.enableVAO();
-    vao.bindVBO(vertices, sizeof(vertices));
-    vao.bindEBO(indices, sizeof(indices));
+    vao.bindVBO();
+    vao.bindEBO();
     vao.bindMatrices(modelMatrices, sizeof(modelMatrices), NUM_CIRCLES);
     vao.enableAttributePointer();
     vao.disableVAO();
 
     Shader shader("src/Shaders/circleVertex.glsl", "src/Shaders/circleFrag.glsl");
 
-    float hori = screenX / 2.0f;
-    float vert = screenY / 2.0f;
+    float hori = dim.x / 2.0f;
+    float vert = dim.y / 2.0f;
     mat4 projection = ortho(-hori, hori, -vert, vert, -1.0f, 1.0f);
-    vec2 velocity(0);
+    //vec2 velocity(0);
     float prev = (float)glfwGetTime();
     while (!glfwWindowShouldClose(window)){
+        glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT);
         float dt = displayRefreshRate(prev, window);
         dt *= 10;
-        //vec2 newVel = c1.getVel() - vec2(0.0f, (g * dt));
-        //c1.setVel(newVel);
-        //float s = 10.0f;
-        //if (c1.getPos().y < -vert + s) {
-            //c1.setVel(c1.getVel() * -1.0f);
-        //}
-        //c1.setPos(c1.getPos() + c1.getVel() * dt);
-        mat4 model = mat4(1.0f);
-        //model = translate(model, vec3(c1.getPos(), 0.0f));
-        model = scale(model, vec3(RADIUS, RADIUS, 1.0f));
-        velocity = velocity - vec2(0.0f, (g * dt));
-        for (int i = 0; i < NUM_CIRCLES; ++i) {
-            modelMatrices[i] = mat4(1.0f);
-
-            modelMatrices[i] = translate(modelMatrices[i], vec3(velocity*dt, 0.0f));
-            modelMatrices[i] = scale(modelMatrices[i], vec3(RADIUS, RADIUS, 1.0f));
+        if (!paused) {
+            runUpdates(circles, modelMatrices, dt);
         }
+        
         vao.updateMatrices(modelMatrices, sizeof(modelMatrices));
         shader.use();
         shader.setVec4f("color", 0.3f, 0.5f, 1.0f, 1.0f);
         shader.setMat4f("projection", projection);
 
         vao.enableVAO();
-        //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_CIRCLES);
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -114,33 +88,35 @@ GLFWwindow* startGLFW() {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     if (!glfwInit())
         return NULL;
-    window = glfwCreateWindow(screenX, screenY, "Hello World", NULL, NULL);
+    window = glfwCreateWindow((int)dim.x, (int)dim.y, "Hello World", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
         return NULL;
     }
     glfwMakeContextCurrent(window);
+    glfwSetKeyCallback(window, keyCallback);
     gladLoadGL();
-    glViewport(0, 0, screenX, screenY);
+    glViewport(0, 0, (int)dim.x, (int)dim.y);
     return window;
 }
-void calculateTranslations(vec4 translations[], unsigned int numTranslations, float offset) {
-    int index = 0;
-    int rows = numTranslations / 10;
-    for (int y = rows; y >= -rows; y -= 2)
-    {
-        for (int x = -10; x < 10; x += 2)
-        {
-            if (index == numTranslations) {
-                break;
-            }
-            vec4 translation;
-            translation.x = (float)x / offset;
-            translation.y = (float)y / offset;
-            translation.z = 0.0f;
-            translation.w = 1.0f;
-            translations[index++] = translation;
+void placeCircles(Circle circles[], mat4 modelMatrices[], float offset) {
+    int numCols = 10;  
+    int numRows = NUM_CIRCLES / numCols;  
+    float startX = -((numCols - 1) * offset) / 2.0f;
+    float startY = -((numRows - 1) * offset) / 2.0f;
+    int i = 0;
+    for (int row = 0; row < numRows; ++row) {
+        for (int col = 0; col < numCols; ++col) {
+            if (i == NUM_CIRCLES) break;
+            float x = startX + col * offset;
+            float y = startY + row * offset;
+            circles[i].setPos(vec2(x, y));
+            mat4 model = mat4(1.0f);
+            model = translate(model, vec3(x, y, 0));
+            model = scale(model, vec3(RADIUS, RADIUS, 1.0f));
+            modelMatrices[i] = model;
+            i++;
         }
     }
 }
@@ -156,4 +132,18 @@ float displayRefreshRate(float& prev, GLFWwindow* window) {
         glfwSetWindowTitle(window, tmp);
     }
     return dt;
+}
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+        paused = !paused;
+    }
+}
+void runUpdates(Circle circles[], mat4 modelMatrices[], float dt) {
+    for (int i = 0; i < NUM_CIRCLES; ++i) {
+        circles[i].gravity(dt);
+        circles[i].updatePos(dt, dim);
+        modelMatrices[i] = mat4(1.0f);
+        modelMatrices[i] = translate(modelMatrices[i], vec3(circles[i].getPos(), 0.0f));
+        modelMatrices[i] = scale(modelMatrices[i], vec3(RADIUS, RADIUS, 1.0f));
+    }
 }
